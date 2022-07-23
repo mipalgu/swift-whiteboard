@@ -21,7 +21,7 @@ public final class Whiteboard: Sendable {
 
     /// Designated initialiser for a whiteboard using the default name.
     /// - Note: the default name is taken from the `WHITEBOARD_NAME` environment variable
-    /// and will revert to the value of `GSW_DEFAULT_NAME` if undefined.
+    /// and will revert to the value of `GSW_DEFAULT_NAME` ("whiteboard") if undefined.
     @inlinable
     public init() {
         if let name = getenv(GSW_DEFAULT_ENV) {
@@ -38,8 +38,16 @@ public final class Whiteboard: Sendable {
         wbd = gsw_new_simple_whiteboard(name)
     }
 
+    /// Return a pointer to  the current whiteboard message for the returned message type
+    /// - Returns: A pointer to the next message in the given slot
+    /// - Note: This function uses messages conforming to `WhiteboardSlotted` and is therefore type safe.
+    @inlinable
+    public func currentMessagePointer<MessageType: WhiteboardSlotted>() -> UnsafeMutablePointer<MessageType>! {
+        UnsafeMutableRawPointer(gsw_current_message(wbd.pointee.wb, CInt(MessageType.whiteboardSlot.rawValue)))?.assumingMemoryBound(to: MessageType.self)
+    }
+
     /// Return a pointer to the current message for the given slot index
-    /// - Parameter slot: Slot number for the returned message
+    /// - Parameter slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to post
     /// - Returns: A pointer to the current message in the given slot
     @inlinable
     public func currentMessagePointer<MessageType, Slot: WhiteboardSlot>(for slot: Slot) -> UnsafeMutablePointer<MessageType>! {
@@ -56,14 +64,22 @@ public final class Whiteboard: Sendable {
         UnsafeMutableRawPointer(gsw_current_message(wbd.pointee.wb, slot))?.assumingMemoryBound(to: MessageType.self)
     }
 
+    /// Return a pointer to  the next message for the given message type
+    /// - Returns: A pointer to the next message in the given slot
+    /// - Note: This function uses messages conforming to `WhiteboardSlotted` and is therefore type safe.
+    @inlinable
+    public func nextMessagePointer<MessageType: WhiteboardSlotted>() -> UnsafeMutablePointer<MessageType>! {
+        UnsafeMutableRawPointer(gsw_next_message(wbd.pointee.wb, CInt(MessageType.whiteboardSlot.rawValue)))?.assumingMemoryBound(to: MessageType.self)
+    }
+
     /// Return a pointer to  the next message for the given slot index
-    /// - Parameter slot: Slot for the returned message
+    /// - Parameter slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to post
     /// - Returns: A pointer to the next message in the given slot
     @inlinable
     public func nextMessagePointer<MessageType, Slot: WhiteboardSlot>(for slot: Slot) -> UnsafeMutablePointer<MessageType>! {
         nextMessagePointer(forSlotAtIndex: CInt(slot.rawValue))
     }
-    
+
     /// Return a pointer to  the next message for the given slot index
     /// - Parameter slot: Slot number for the returned message
     /// - Returns: A pointer to the next message in the given slot
@@ -75,7 +91,7 @@ public final class Whiteboard: Sendable {
     }
 
     /// Increment the ring buffer generation number for the given message slot
-    /// - Parameter slot: Slot  for the given message whose generation should be incremented
+    /// - Parameter slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to post
     /// - Note: The generation will wrap around to zero once `GU_SIMPLE_WHITEBOARD_GENERATIONS` have been reached.
     @inlinable
     public func incrementGeneration<Slot: WhiteboardSlot>(for slot: Slot) {
@@ -93,7 +109,7 @@ public final class Whiteboard: Sendable {
     }
 
     /// Increment the event counter for the given message slot
-    /// - Parameter slot: Slot number for the given message whose generation should be incremented
+    /// - Parameter slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to post
     /// - Note: the event counter will wrap around to zero on overflow
     @inlinable
     public func incrementEventCounter<Slot: WhiteboardSlot>(for slot: Slot) {
@@ -108,5 +124,100 @@ public final class Whiteboard: Sendable {
     @inlinable
     public func incrementEventCounter(forSlotAtIndex slot: CInt) {
         gsw_increment_event_counter(wbd.pointee.wb, slot)
+    }
+
+    /// Post the given message to the whiteboard
+    /// - Parameters:
+    ///   - message: The message to post
+    ///   - slotIndex: Slot number for the message to post
+    /// - Note: This function uses a numerical index and is not recommended, except for low-level usage.
+    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `post(message:to:)` instead.
+    @inlinable
+    public func post<MessageType>(message: MessageType, toSlotAtIndex slotIndex: CInt) {
+        assert(MemoryLayout<MessageType>.size <= GU_SIMPLE_WHITEBOARD_BUFSIZE)
+        nextMessagePointer(forSlotAtIndex: slotIndex).pointee = message
+        incrementGeneration(forSlotAtIndex: slotIndex)
+        incrementEventCounter(forSlotAtIndex: slotIndex)
+    }
+
+    /// Post the given message to the whiteboard
+    /// - Parameters:
+    ///   - message: The message to post
+    ///   - slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to post
+    /// - Note: This function uses a `WhiteboardSlot` index and is not type safe.
+    /// For type-safe usage, use messages conforming to `WhiteboardSlotted` instead.
+    @inlinable
+    public func post<MessageType, Slot: WhiteboardSlot>(message m: MessageType, to slot: Slot) {
+        post(message: m, toSlotAtIndex: CInt(slot.rawValue))
+    }
+
+    /// Post the given message to the whiteboard
+    /// - Parameter message: The message to post
+    /// - Note: This function uses messages conforming to `WhiteboardSlotted` and is therefore type safe.
+    @inlinable
+    public func post<MessageType: WhiteboardSlotted>(message m: MessageType) {
+        post(message: m, to: MessageType.whiteboardSlot)
+    }
+
+    /// Post the content of the memory pointed to by the given message pointer to the whiteboard
+    /// - Parameters:
+    ///   - pointer: Pointer to the message to post
+    ///   - slotIndex: Slot number for the message to post
+    /// - Note: This function uses a numerical index and is not recommended, except for low-level usage.
+    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `post(messageReferencedBy:to:)` instead.
+    @inlinable
+    public func post<MessageType>(messageReferencedBy pointer: UnsafePointer<MessageType>, toSlotAtIndex slotIndex: CInt) {
+        assert(MemoryLayout<MessageType>.size <= GU_SIMPLE_WHITEBOARD_BUFSIZE)
+        nextMessagePointer(forSlotAtIndex: slotIndex).pointee = pointer.pointee
+        incrementGeneration(forSlotAtIndex: slotIndex)
+        incrementEventCounter(forSlotAtIndex: slotIndex)
+    }
+
+    /// Post the given message to the whiteboard
+    /// - Parameters:
+    ///   - pointer: Pointer to the message to post
+    ///   - slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to post
+    /// - Note: This function uses a `WhiteboardSlot` index and is not type safe.
+    /// For type-safe usage, use pointers to messages conforming to `WhiteboardSlotted` instead.
+    @inlinable
+    public func post<MessageType, Slot: WhiteboardSlot>(messageReferencedBy pointer: UnsafePointer<MessageType>, to slot: Slot) {
+        post(messageReferencedBy: pointer, toSlotAtIndex: CInt(slot.rawValue))
+    }
+
+    /// Post the given message to the whiteboard
+    /// - Parameter message: The message to post
+    /// - Note: This function uses messages conforming to `WhiteboardSlotted` and is therefore type safe.
+    @inlinable
+    public func post<MessageType: WhiteboardSlotted>(messageReferencedBy pointer: UnsafePointer<MessageType>) {
+        post(messageReferencedBy: pointer, to: MessageType.whiteboardSlot)
+    }
+
+    /// Get a message from the whiteboard
+    /// - Parameter slotIndex: Slot number for the message to get
+    /// - Returns: A copy of the current whiteboard message in the given slot
+    /// - Note: This function uses a numerical index and is not recommended, except for low-level usage.
+    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `getMessage(from:)` instead.
+    @inlinable
+    public func getMessage<MessageType>(fromSlotAtIndex slotIndex: CInt) -> MessageType {
+        currentMessagePointer(forSlotAtIndex: slotIndex).pointee
+    }
+
+    /// Get a message from the whiteboard
+    /// - Parameter slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to get
+    /// - Returns: A copy of the current whiteboard message in the given slot
+    /// - Note: This function uses a `WhiteboardSlot` index and is not type safe.
+    /// For type-safe usage, use pointers to messages conforming to `WhiteboardSlotted` instead.
+    @inlinable
+    public func getMessage<MessageType, Slot: WhiteboardSlot>(from slot: Slot) -> MessageType {
+        currentMessagePointer(for: slot).pointee
+    }
+
+    /// Get a message from the whiteboard
+    /// - Parameter slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to get
+    /// - Returns: A copy of the current whiteboard message in the given slot
+    /// - Note: This function uses messages conforming to `WhiteboardSlotted` and is therefore type safe.
+    @inlinable
+    public func getMessage<MessageType: WhiteboardSlotted>() -> MessageType {
+        currentMessagePointer().pointee
     }
 }
