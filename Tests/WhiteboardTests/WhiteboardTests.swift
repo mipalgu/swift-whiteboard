@@ -4,18 +4,19 @@ import XCTest
 private let testWBName = "test-swift-whiteboard"
 
 private enum ExampleWhiteboardSlot: Int, WhiteboardSlot {
-    case one = 1
-    case two = 2
-    case three = 3
-    case four = 4
+    case zero
+    case one
+    case two
+    case three
+    case four
 }
 
-private struct ExampleMessage: WhiteboardSlotted, Sendable, Equatable {
+private struct ExampleMessage: WhiteboardSlotted, Equatable {
     static let whiteboardSlot = ExampleWhiteboardSlot.three
     let value: Int32
 }
 
-private struct PerformanceMessage: WhiteboardSlotted, Sendable, Equatable {
+private struct PerformanceMessage: WhiteboardSlotted, Equatable {
     static let whiteboardSlot = ExampleWhiteboardSlot.four
     let value: UInt32
 }
