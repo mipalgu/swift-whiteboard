@@ -1,3 +1,8 @@
+//
+//  Whiteboard.swift
+//
+//  Created by Rene Hexel on 23/7/2022.
+//
 import Foundation
 import cwhiteboard
 
@@ -5,7 +10,7 @@ import cwhiteboard
 /// This whiteboard is safe for concurrent reader access, provided that there
 /// there is only a single writer attempting to access the whiteboard at any
 /// given time.
-public final class Whiteboard {
+public final class Whiteboard: Sendable {
     /// Descriptor of the underlying whiteboard
     @usableFromInline
     let wbd: UnsafeMutablePointer<gu_simple_whiteboard_descriptor>
@@ -37,31 +42,71 @@ public final class Whiteboard {
     /// - Parameter slot: Slot number for the returned message
     /// - Returns: A pointer to the current message in the given slot
     @inlinable
-    public func currentMessagePointer<T>(for slot: CInt) -> UnsafeMutablePointer<T>! {
-        UnsafeMutableRawPointer(gsw_current_message(wbd.pointee.wb, slot))?.assumingMemoryBound(to: T.self)
+    public func currentMessagePointer<MessageType, Slot: WhiteboardSlot>(for slot: Slot) -> UnsafeMutablePointer<MessageType>! {
+        currentMessagePointer(forSlotAtIndex: CInt(slot.rawValue))
+    }
+
+    /// Return a pointer to the current message for the given slot index
+    /// - Parameter slot: Slot number for the returned message
+    /// - Returns: A pointer to the current message in the given slot
+    /// - Note: This function uses a numerical index and is not recommended, except for low-level usage.
+    /// For high-level usage, use `currentMessagePointer<MessageType>(for slot:)` instead.
+    @inlinable
+    public func currentMessagePointer<MessageType>(forSlotAtIndex slot: CInt) -> UnsafeMutablePointer<MessageType>! {
+        UnsafeMutableRawPointer(gsw_current_message(wbd.pointee.wb, slot))?.assumingMemoryBound(to: MessageType.self)
     }
 
     /// Return a pointer to  the next message for the given slot index
-    /// - Parameter slot: Slot number for the returned message
-    /// - Returns: A pointer to the current message in the given slot
+    /// - Parameter slot: Slot for the returned message
+    /// - Returns: A pointer to the next message in the given slot
     @inlinable
-    public func nextMessagePointer<T>(for slot: CInt) -> UnsafeMutablePointer<T>! {
-        UnsafeMutableRawPointer(gsw_next_message(wbd.pointee.wb, slot))?.assumingMemoryBound(to: T.self)
+    public func nextMessagePointer<MessageType, Slot: WhiteboardSlot>(for slot: Slot) -> UnsafeMutablePointer<MessageType>! {
+        nextMessagePointer(forSlotAtIndex: CInt(slot.rawValue))
     }
     
+    /// Return a pointer to  the next message for the given slot index
+    /// - Parameter slot: Slot number for the returned message
+    /// - Returns: A pointer to the next message in the given slot
+    /// - Note: This function uses a numerical index and is not recommended, except for low-level usage.
+    /// For high-level usage, use `nextMessagePointer<MessageType>(for slot:)` instead.
+    @inlinable
+    public func nextMessagePointer<MessageType>(forSlotAtIndex slot: CInt) -> UnsafeMutablePointer<MessageType>! {
+        UnsafeMutableRawPointer(gsw_next_message(wbd.pointee.wb, slot))?.assumingMemoryBound(to: MessageType.self)
+    }
+
+    /// Increment the ring buffer generation number for the given message slot
+    /// - Parameter slot: Slot  for the given message whose generation should be incremented
+    /// - Note: The generation will wrap around to zero once `GU_SIMPLE_WHITEBOARD_GENERATIONS` have been reached.
+    @inlinable
+    public func incrementGeneration<Slot: WhiteboardSlot>(for slot: Slot) {
+        gsw_increment(wbd.pointee.wb, CInt(slot.rawValue))
+    }
+
     /// Increment the ring buffer generation number for the given message slot
     /// - Parameter slot: Slot number for the given message whose generation should be incremented
-    /// - Note: the generation will wrap around to zero once `GU_SIMPLE_WHITEBOARD_GENERATIONS` have been reached.
+    /// - Note: The generation will wrap around to zero once `GU_SIMPLE_WHITEBOARD_GENERATIONS` have been reached.
+    /// - Note: This function uses a numerical index and is not recommended, except for low-level usage.
+    /// For high-level usage, use `incrementGeneration(for slot:)` instead.
     @inlinable
-    public func incrementGeneration(for slot: CInt) {
+    public func incrementGeneration(forSlotAtIndex slot: CInt) {
         gsw_increment(wbd.pointee.wb, slot)
     }
-    
+
     /// Increment the event counter for the given message slot
     /// - Parameter slot: Slot number for the given message whose generation should be incremented
-    /// - Note: the generation will wrap around to zero once `GU_SIMPLE_WHITEBOARD_GENERATIONS` have been reached.
+    /// - Note: the event counter will wrap around to zero on overflow
     @inlinable
-    public func incrementEventCounter(for slot: CInt) {
+    public func incrementEventCounter<Slot: WhiteboardSlot>(for slot: Slot) {
+        gsw_increment_event_counter(wbd.pointee.wb, CInt(slot.rawValue))
+    }
+
+    /// Increment the event counter for the given message slot
+    /// - Parameter slot: Slot number for the given message whose generation should be incremented
+    /// - Note: the event counter will wrap around to zero on overflow
+    /// - Note: This function uses a numerical index and is not recommended, except for low-level usage.
+    /// For high-level usage, use `incrementEventCounter(for slot:)` instead.
+    @inlinable
+    public func incrementEventCounter(forSlotAtIndex slot: CInt) {
         gsw_increment_event_counter(wbd.pointee.wb, slot)
     }
 }
