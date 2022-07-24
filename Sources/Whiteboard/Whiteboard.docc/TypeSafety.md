@@ -8,11 +8,11 @@ The ``Whiteboard`` library provides a ``WhiteboardSlotted`` protocol.  This prot
 
 ```swift
 struct MyMessage: WhiteboardSlotted, Equatable {
-/// The whiteboard slot allocated for messages of this type
-static let whiteboardSlot = MyWhiteboardSlot.firstWhiteboardSlot
+    /// The whiteboard slot allocated for messages of this type
+    static let whiteboardSlot = MyWhiteboardSlot.firstWhiteboardSlot
 
-/// The actual value on the whiteboard
-let value: UInt64
+    /// The actual value on the whiteboard
+    let value: UInt64
 }
 ```
 
@@ -24,8 +24,8 @@ Suppose you have a content type that represents a 2-dimensional screen coordinat
 
 ```swift
 struct ScreenCoordinate: Sendable, Equatable {
-var x: Int16
-var y: Int16
+    var x: Int16
+    var y: Int16
 }
 ```
 
@@ -34,13 +34,13 @@ Rather than making this screen coordinate conform to ``WhiteboardSlotted`` direc
 ```swift
 /// A message for the top left coordinate of an object
 struct TopLeft: WhiteboardSlotted, Equatable {
-static let whiteboardSlot = MyWhiteboardSlot.secondWhiteboardSlot
-let coordinates: ScreenCoordinate
+    static let whiteboardSlot = MyWhiteboardSlot.secondWhiteboardSlot
+    let coordinates: ScreenCoordinate
 }
 
 /// A message for the bottom right coordinate of an object
 struct BottomRight: WhiteboardSlotted, Equatable {
-static let whiteboardSlot = MyWhiteboardSlot.thirdWhiteboardSlot
-let coordinates: ScreenCoordinate
+    static let whiteboardSlot = MyWhiteboardSlot.thirdWhiteboardSlot
+    let coordinates: ScreenCoordinate
 }
 ```
