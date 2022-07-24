@@ -8,7 +8,7 @@ A whiteboard is shared memory area structured into messages that can be written 
 
 ### Creating a Whiteboard
 
-To create a whiteboard, you initialise a new instance of the ``Whiteboard`` class.  Optionally, you can provide a name for the whiteboard, otherwise the created instance will access the global, default whiteboard, as the following code shows:
+To create a whiteboard, you initialise a new instance of the ``Whiteboard/Whiteboard`` class.  Optionally, you can provide a name for the whiteboard, otherwise the created instance will access the global, default whiteboard, as the following code shows:
 
 ```swift
 let whiteboard = Whiteboard()
