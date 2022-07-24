@@ -53,7 +53,7 @@ struct TopLeft: WhiteboardSlotted, Equatable {
     let coordinates: ScreenCoordinate
 }
 
-/// A message for the bottom right coordinate
+/// A message for the bottom right coordinate of an object
 struct BottomRight: WhiteboardSlotted, Equatable {
     static let whiteboardSlot = MyWhiteboardSlot.thirdWhiteboardSlot
     let coordinates: ScreenCoordinate
