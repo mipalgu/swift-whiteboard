@@ -18,6 +18,6 @@ let package = Package(
             dependencies: [.product(name: "cwhiteboard", package: "gusimplewhiteboard")]),
         .testTarget(
             name: "WhiteboardTests",
-            dependencies: ["Whiteboard"]),
+            dependencies: ["Whiteboard", .product(name: "cwhiteboard", package: "gusimplewhiteboard")]),
     ]
 )

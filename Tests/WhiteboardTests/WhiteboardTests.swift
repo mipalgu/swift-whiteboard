@@ -1,3 +1,4 @@
+import cwhiteboard
 @testable import Whiteboard
 import XCTest
 
@@ -24,6 +25,10 @@ private struct PerformanceMessage: WhiteboardSlotted, Equatable {
 final class WhiteboardTests: XCTestCase {
     let whiteboard = Whiteboard(name: testWBName)
 
+    override class func setUp() {
+        XCTAssertEqual(0, unsetenv("GSW_DEFAULT_ENV"))
+    }
+
     /// Test whiteboard invariants
     func testWB() {
         let wbd = whiteboard.wbd
@@ -37,6 +42,37 @@ final class WhiteboardTests: XCTestCase {
         XCTAssertNotEqual(wbd.pointee.fd, 0)
         XCTAssertEqual(wb.pointee.indexes.0, 0)
         XCTAssertEqual(wb.pointee.event_counters.0, 0)
+    }
+
+    /// Tests whether the init sets up a whiteboard with the global name.
+    func testEmptyInit() {
+        let whiteboard = Whiteboard()
+        let whiteboard2 = Whiteboard(name: GSW_DEFAULT_NAME)
+        let slot = ExampleWhiteboardSlot.zero
+        whiteboard.post(message: UInt64.min, to: slot)
+        let result1: UInt64 = whiteboard2.getMessage(from: slot)
+        XCTAssertEqual(UInt64.min, result1)
+        let value = UInt64.random(in: (UInt64.min + 1)...UInt64.max)
+        whiteboard.post(message: value, to: slot)
+        let result2: UInt64 = whiteboard2.getMessage(from: slot)
+        XCTAssertEqual(value, result2)
+    }
+
+    /// Tests whether the init sets up a whiteboard with the name that exists
+    /// in the environment.
+    func testEmptyInitFromEnvironment() {
+        let name = "test_env_name"
+        XCTAssertEqual(0, setenv(GSW_DEFAULT_ENV, name, 1))
+        let whiteboard = Whiteboard()
+        let whiteboard2 = Whiteboard(name: name)
+        let slot = ExampleWhiteboardSlot.zero
+        whiteboard.post(message: UInt64.min, to: slot)
+        let result1: UInt64 = whiteboard2.getMessage(from: slot)
+        XCTAssertEqual(UInt64.min, result1)
+        let value = UInt64.random(in: (UInt64.min + 1)...UInt64.max)
+        whiteboard.post(message: value, to: slot)
+        let result2: UInt64 = whiteboard2.getMessage(from: slot)
+        XCTAssertEqual(value, result2)
     }
 
     /// Test posting and fetching message at index 1
