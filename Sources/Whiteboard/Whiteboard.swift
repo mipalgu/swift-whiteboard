@@ -15,6 +15,23 @@ public final class Whiteboard: Sendable {
     /// Descriptor of the underlying whiteboard
     @usableFromInline let wbd: UnsafeMutablePointer<gu_simple_whiteboard_descriptor>
 
+    /// Dynamic version of the whiteboard as recorded in shared memory.
+    ///
+    /// This is the version of the whiteboard recorded by the process creating the
+    /// shared memory file.  If the whiteboard was created by the current process,
+    /// this version will match the static version created at compile time.
+    /// - Note: For safety, an application should check that this version is equal to the static `version` of the whiteboard.
+    @inlinable
+    public var version: Int { Int(wbd.pointee.wb.pointee.version) }
+
+    /// Global whiteboard event counter.
+    ///
+    /// This contains the global number of message postings that have happened so far.
+    /// Checking for equality with a previous value can be used to determine if new messages are available on the whiteboard.
+    /// - Note: This counter will wrap around to zero frequently, most likely before it reaches `Int.max`
+    @inlinable
+    public var eventCount: Int { Int(wbd.pointee.wb.pointee.eventcount) }
+
     /// Designated initialiser for a whiteboard using the default name.
     /// - Note: the default name is taken from the `WHITEBOARD_NAME` environment variable
     /// and will revert to the value of `GSW_DEFAULT_NAME` ("whiteboard") if undefined.
@@ -236,4 +253,14 @@ public final class Whiteboard: Sendable {
         gsw_free_whiteboard(wbd)
     }
 
+    /// Static version of the whiteboard.
+    ///
+    /// This is the version of the whiteboard that was visible when this package was compiled.
+    /// - Note: For safety, an application should check that this version is equal to the dynamic `version` of the whiteboard.
+    static public var version = Int(GU_SIMPLE_WHITEBOARD_VERSION)
+
+    /// Total number of message slots available on the whiteboard.
+    ///
+    /// Slot indices range from 0 ..< `slotCount`.
+    static public var slotCount = Int(GSW_TOTAL_MESSAGE_TYPES)
 }

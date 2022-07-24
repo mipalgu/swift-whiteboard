@@ -37,8 +37,11 @@ final class WhiteboardTests: XCTestCase {
             XCTAssertNotNil(wbd.pointee.wb)
             return
         }
+        XCTAssertEqual(Whiteboard.slotCount, Int(GSW_TOTAL_MESSAGE_TYPES))
+        XCTAssertEqual(whiteboard.version, Whiteboard.version)
+        XCTAssertEqual(Int(wb.pointee.version), Whiteboard.version)
+        XCTAssertEqual(Int(wb.pointee.eventcount), whiteboard.eventCount)
         XCTAssertEqual(wb.pointee.magic, 0xfeeda11deadbeef6)
-        XCTAssertEqual(wb.pointee.version, 2207)
         XCTAssertNotEqual(wbd.pointee.fd, 0)
         XCTAssertEqual(wb.pointee.indexes.0, 0)
         XCTAssertEqual(wb.pointee.event_counters.0, 0)
