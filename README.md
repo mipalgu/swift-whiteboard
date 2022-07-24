@@ -4,6 +4,7 @@ A Swift shared-memory implementation of the blackboard communication architectur
 
 ![Linux](https://github.com/mipalgu/swift-whiteboard/actions/workflows/ci-linux.yml/badge.svg) 
 ![macOS](https://github.com/mipalgu/swift-whiteboard/actions/workflows/ci-macOS.yml/badge.svg) 
+![Lint](https://github.com/mipalgu/swift-whiteboard/actions/workflows/swiftlint.yml/badge.svg) 
 
 ## Overview
 
