@@ -128,7 +128,7 @@ final class WhiteboardTests: XCTestCase {
         XCTAssertEqual(wb.pointee.event_counters.2, e &+ 1)
     }
 
-    /// Test posting and fetching statically typed messagges
+    /// Test posting and fetching statically typed messages
     func testTypedPostGet() {
         let wbd = whiteboard.wbd
         XCTAssertNotNil(wbd)
