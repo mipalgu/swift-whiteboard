@@ -15,10 +15,6 @@ public final class Whiteboard: Sendable {
     /// Descriptor of the underlying whiteboard
     @usableFromInline let wbd: UnsafeMutablePointer<gu_simple_whiteboard_descriptor>
 
-    deinit {
-        gsw_free_whiteboard(wbd)
-    }
-
     /// Designated initialiser for a whiteboard using the default name.
     /// - Note: the default name is taken from the `WHITEBOARD_NAME` environment variable
     /// and will revert to the value of `GSW_DEFAULT_NAME` ("whiteboard") if undefined.
@@ -235,4 +231,9 @@ public final class Whiteboard: Sendable {
     public func getMessage<MessageType: WhiteboardSlotted>() -> MessageType {
         currentMessagePointer().pointee
     }
+
+    deinit {
+        gsw_free_whiteboard(wbd)
+    }
+
 }

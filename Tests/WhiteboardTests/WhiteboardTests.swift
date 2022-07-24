@@ -125,7 +125,7 @@ final class WhiteboardTests: XCTestCase {
 
     func testPostPerformance() {
         let message = PerformanceMessage(value: UInt32.random(in: UInt32.min...UInt32.max))
-        //swiftlint:disable:next no_space_in_method_call
+        // swiftlint:disable:next no_space_in_method_call
         measure {
             for _ in 0..<100_000 {
                 whiteboard.post(message: message)
@@ -134,7 +134,7 @@ final class WhiteboardTests: XCTestCase {
     }
 
     func testGetPerformance() {
-        //swiftlint:disable:next no_space_in_method_call
+        // swiftlint:disable:next no_space_in_method_call
         measure {
             for _ in 0..<100_000 {
                 let _: PerformanceMessage = whiteboard.getMessage()
