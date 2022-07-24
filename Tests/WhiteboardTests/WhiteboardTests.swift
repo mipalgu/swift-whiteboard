@@ -25,8 +25,21 @@ private struct PerformanceMessage: WhiteboardSlotted, Equatable {
 final class WhiteboardTests: XCTestCase {
     let whiteboard = Whiteboard(name: testWBName)
 
-    override class func setUp() {
+    override func setUp() {
         XCTAssertEqual(0, unsetenv(GSW_DEFAULT_ENV))
+    }
+
+    override func tearDown() {
+        if let wb = whiteboard.wbd.pointee.wb {
+            withUnsafeMutablePointer(to: &wb.pointee.indexes.0) { start in
+                let buffer = UnsafeMutableBufferPointer(start: start, count: Int(GSW_TOTAL_MESSAGE_TYPES))
+                buffer.indices.forEach { buffer[$0] = 0 }
+            }
+            withUnsafeMutablePointer(to: &wb.pointee.event_counters.0) { start in
+                let buffer = UnsafeMutableBufferPointer(start: start, count: Int(GSW_TOTAL_MESSAGE_TYPES))
+                buffer.indices.forEach { buffer[$0] = 0 }
+            }
+        }
     }
 
     /// Test whiteboard invariants
@@ -76,6 +89,38 @@ final class WhiteboardTests: XCTestCase {
         whiteboard.post(message: value, to: slot)
         let result2: UInt64 = whiteboard2.getMessage(from: slot)
         XCTAssertEqual(value, result2)
+    }
+
+    /// Tests whether it is possible to post/get messages that are referenced
+    /// from pointers.
+    func testPointerPostGet() {
+        let value1 = UInt64.min
+        let value2 = UInt64.random(in: (UInt64.min + 1)...UInt64.max)
+        let slot = ExampleWhiteboardSlot.zero
+        withUnsafePointer(to: value1) { p in
+            whiteboard.post(messageReferencedBy: p, to: slot)
+        }
+        XCTAssertEqual(value1, whiteboard.getMessage(from: slot))
+        withUnsafePointer(to: value2) { p in
+            whiteboard.post(messageReferencedBy: p, to: slot)
+        }
+        XCTAssertEqual(value2, whiteboard.getMessage(from: slot))
+    }
+
+    /// Tests whether it is possible to post/get messages that are referenced
+    /// from pointers using the `fromSlotAtIndex` variants of post/get.
+    func testLowLevelPointerPostGet() {
+        let value1 = UInt64.min
+        let value2 = UInt64.random(in: (UInt64.min + 1)...UInt64.max)
+        let slot = CInt(ExampleWhiteboardSlot.zero.rawValue)
+        withUnsafePointer(to: value1) { p in
+            whiteboard.post(messageReferencedBy: p, toSlotAtIndex: slot)
+        }
+        XCTAssertEqual(value1, whiteboard.getMessage(fromSlotAtIndex: slot))
+        withUnsafePointer(to: value2) { p in
+            whiteboard.post(messageReferencedBy: p, toSlotAtIndex: slot)
+        }
+        XCTAssertEqual(value2, whiteboard.getMessage(fromSlotAtIndex: slot))
     }
 
     /// Test posting and fetching message at index 1
@@ -129,6 +174,39 @@ final class WhiteboardTests: XCTestCase {
         XCTAssertEqual(current.pointee, postValue)
         XCTAssertTrue(wb.pointee.indexes.2 == i + 1 || wb.pointee.indexes.2 == 0 && wb.pointee.indexes.2 != i)
         XCTAssertEqual(wb.pointee.event_counters.2, e &+ 1)
+    }
+
+    /// Test posting and fetching statically typed messagges
+    func testTypedPointerPostGet() {
+        let wbd = whiteboard.wbd
+        XCTAssertNotNil(wbd)
+        guard let wb = wbd.pointee.wb else {
+            XCTAssertNotNil(wbd.pointee.wb)
+            return
+        }
+        let mySlot = ExampleWhiteboardSlot.three
+        let i = wb.pointee.indexes.3
+        let e = wb.pointee.event_counters.3
+        guard let nextWithSlot: UnsafeMutablePointer<ExampleMessage> = whiteboard.nextMessagePointer(for: mySlot) else {
+            XCTFail("`nextMessagePointer(for:)` returned nil") ; return
+        }
+        guard let next: UnsafeMutablePointer<ExampleMessage> = whiteboard.nextMessagePointer() else {
+            XCTFail("`nextMessagePointer()` returned nil") ; return
+        }
+        XCTAssertEqual(nextWithSlot, next)
+        let postedValue = ExampleMessage(value: Int32.random(in: Int32.min...Int32.max))
+        withUnsafePointer(to: postedValue) { p in
+            whiteboard.post(messageReferencedBy: p)
+        }
+        let receivedValue: ExampleMessage = whiteboard.getMessage()
+        guard let current: UnsafeMutablePointer<ExampleMessage> = whiteboard.currentMessagePointer() else {
+            XCTFail("`currentMessagePointer()` returned nil") ; return
+        }
+        XCTAssertEqual(current, next)
+        XCTAssertEqual(current.pointee, receivedValue)
+        XCTAssertEqual(current.pointee, postedValue)
+        XCTAssertTrue(wb.pointee.indexes.3 == i + 1 || wb.pointee.indexes.3 == 0 && wb.pointee.indexes.3 != i)
+        XCTAssertEqual(wb.pointee.event_counters.3, e &+ 1)
     }
 
     /// Test posting and fetching statically typed messages
