@@ -1,6 +1,9 @@
-# swift-whiteboard
+# Swift Whiteboard
 
 A Swift shared-memory implementation of the blackboard communication architecture.
+
+![Linux](https://github.com/mipalgu/swift-whiteboard/actions/workflows/ci-linux.yml/badge.svg) 
+![macOS](https://github.com/mipalgu/swift-whiteboard/actions/workflows/ci-macOS.yml/badge.svg) 
 
 ## Overview
 
