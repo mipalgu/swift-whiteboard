@@ -5,7 +5,7 @@ A Swift shared-memory implementation of the blackboard communication architectur
 ## Overview
 
 This is a Swift wrapper around [gusimplewhiteboard](https://github.com/mipalgu/gusimplewhiteboard).
-Whiteboard wraps the high-speed, concurrency-safe gusimplewhiteboard C library for use in Swift. The package provides a sendable Whiteboard class allows concurrent read and write access to a common message base. Message slots can be configured by conforming to the WhiteboardSlot protocol. You can create your own type-safe messages through conformance to the WhiteboardSlotted protocol.
+This package wraps the high-speed, concurrency-safe gusimplewhiteboard C library for use in Swift. The package provides a sendable Whiteboard class allows concurrent read and write access to a common message base. Message slots can be configured by conforming to the WhiteboardSlot protocol. You can create your own type-safe messages through conformance to the WhiteboardSlotted protocol.
 
 ## Prerequisites
 
