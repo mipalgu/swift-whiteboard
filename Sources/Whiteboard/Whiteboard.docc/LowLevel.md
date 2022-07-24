@@ -6,5 +6,8 @@ In general, it is recommended to test these limits (e.g. through assertions) in 
 
 ## Whiteboard Version
 
-The ``Whiteboard/Whiteboard`` class contains both a static and a dynamic ``version`` property.  For safe operation, it is imperative that an application checks at runtime that both versions are the same.
+The ``Whiteboard/Whiteboard`` class contains both a static and a dynamic `version` property.  For safe operation, it is imperative that an application checks at runtime that both versions are the same.
 
+## Event Counter
+
+Detecting changes on the whiteboard can be achieved through the `eventCount` property.  This property contains the total number of messages posted on the whiteboard so far.  It is important to note that while the `eventCount` property is of type `Int` in Swift, it is likely that the shared memory representation will have a lower bit count.  Therefore, expect `eventCount` to wrap around to zero frequently and exhibit a maximum value orders of magnitude below `Int.max`.
