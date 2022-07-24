@@ -26,7 +26,7 @@ final class WhiteboardTests: XCTestCase {
     let whiteboard = Whiteboard(name: testWBName)
 
     override class func setUp() {
-        XCTAssertEqual(0, unsetenv("GSW_DEFAULT_ENV"))
+        XCTAssertEqual(0, unsetenv(GSW_DEFAULT_ENV))
     }
 
     /// Test whiteboard invariants
