@@ -1,0 +1,24 @@
+name: Ubuntu 20.04 Swift CI
+
+on:
+  push:
+    branches: [development, main]
+
+jobs:
+
+  exec-ci:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: swift-actions/setup-swift@v1
+        with:
+            swift-version: "5.6.1"
+
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Debug Build
+        run: swift build -c debug
+
+      - name: Release Build
+        run: swift build -c release
