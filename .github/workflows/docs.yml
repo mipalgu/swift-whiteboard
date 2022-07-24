@@ -7,7 +7,7 @@ on:
 jobs:
 
   generate-documentation:
-    runs-on: ubuntu-20.04
+    runs-on: macos-latest
 
     steps:
       - uses: swift-actions/setup-swift@v1
