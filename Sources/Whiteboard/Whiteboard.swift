@@ -3,8 +3,9 @@
 //
 //  Created by Rene Hexel on 23/7/2022.
 //
-import Foundation
+
 import cwhiteboard
+import Foundation
 
 /// A simple whiteboard class that allows non-blocking put and get operations.
 /// This whiteboard is safe for concurrent reader access, provided that there
@@ -12,8 +13,7 @@ import cwhiteboard
 /// given time.
 public final class Whiteboard: Sendable {
     /// Descriptor of the underlying whiteboard
-    @usableFromInline
-    let wbd: UnsafeMutablePointer<gu_simple_whiteboard_descriptor>
+    @usableFromInline let wbd: UnsafeMutablePointer<gu_simple_whiteboard_descriptor>
 
     deinit {
         gsw_free_whiteboard(wbd)
@@ -43,14 +43,18 @@ public final class Whiteboard: Sendable {
     /// - Note: This function uses messages conforming to `WhiteboardSlotted` and is therefore type safe.
     @inlinable
     public func currentMessagePointer<MessageType: WhiteboardSlotted>() -> UnsafeMutablePointer<MessageType>! {
-        UnsafeMutableRawPointer(gsw_current_message(wbd.pointee.wb, CInt(MessageType.whiteboardSlot.rawValue)))?.assumingMemoryBound(to: MessageType.self)
+        UnsafeMutableRawPointer(
+                gsw_current_message(wbd.pointee.wb, CInt(MessageType.whiteboardSlot.rawValue))
+            )?.assumingMemoryBound(to: MessageType.self)
     }
 
     /// Return a pointer to the current message for the given slot index
     /// - Parameter slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to post
     /// - Returns: A pointer to the current message in the given slot
     @inlinable
-    public func currentMessagePointer<MessageType, Slot: WhiteboardSlot>(for slot: Slot) -> UnsafeMutablePointer<MessageType>! {
+    public func currentMessagePointer<MessageType, Slot: WhiteboardSlot>(
+        for slot: Slot
+    ) -> UnsafeMutablePointer<MessageType>! {
         currentMessagePointer(forSlotAtIndex: CInt(slot.rawValue))
     }
 
@@ -69,14 +73,18 @@ public final class Whiteboard: Sendable {
     /// - Note: This function uses messages conforming to `WhiteboardSlotted` and is therefore type safe.
     @inlinable
     public func nextMessagePointer<MessageType: WhiteboardSlotted>() -> UnsafeMutablePointer<MessageType>! {
-        UnsafeMutableRawPointer(gsw_next_message(wbd.pointee.wb, CInt(MessageType.whiteboardSlot.rawValue)))?.assumingMemoryBound(to: MessageType.self)
+        UnsafeMutableRawPointer(
+                gsw_next_message(wbd.pointee.wb, CInt(MessageType.whiteboardSlot.rawValue))
+            )?.assumingMemoryBound(to: MessageType.self)
     }
 
     /// Return a pointer to  the next message for the given slot index
     /// - Parameter slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to post
     /// - Returns: A pointer to the next message in the given slot
     @inlinable
-    public func nextMessagePointer<MessageType, Slot: WhiteboardSlot>(for slot: Slot) -> UnsafeMutablePointer<MessageType>! {
+    public func nextMessagePointer<MessageType, Slot: WhiteboardSlot>(
+        for slot: Slot
+    ) -> UnsafeMutablePointer<MessageType>! {
         nextMessagePointer(forSlotAtIndex: CInt(slot.rawValue))
     }
 
@@ -164,9 +172,13 @@ public final class Whiteboard: Sendable {
     ///   - pointer: Pointer to the message to post
     ///   - slotIndex: Slot number for the message to post
     /// - Note: This function uses a numerical index and is not recommended, except for low-level usage.
-    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `post(messageReferencedBy:to:)` instead.
+    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `post(messageReferencedBy:to:)`
+    /// instead.
     @inlinable
-    public func post<MessageType>(messageReferencedBy pointer: UnsafePointer<MessageType>, toSlotAtIndex slotIndex: CInt) {
+    public func post<MessageType>(
+        messageReferencedBy pointer: UnsafePointer<MessageType>,
+        toSlotAtIndex slotIndex: CInt
+    ) {
         assert(MemoryLayout<MessageType>.size <= GU_SIMPLE_WHITEBOARD_BUFSIZE)
         nextMessagePointer(forSlotAtIndex: slotIndex).pointee = pointer.pointee
         incrementGeneration(forSlotAtIndex: slotIndex)
@@ -180,7 +192,10 @@ public final class Whiteboard: Sendable {
     /// - Note: This function uses a `WhiteboardSlot` index and is not type safe.
     /// For type-safe usage, use pointers to messages conforming to `WhiteboardSlotted` instead.
     @inlinable
-    public func post<MessageType, Slot: WhiteboardSlot>(messageReferencedBy pointer: UnsafePointer<MessageType>, to slot: Slot) {
+    public func post<MessageType, Slot: WhiteboardSlot>(
+        messageReferencedBy pointer: UnsafePointer<MessageType>,
+        to slot: Slot
+    ) {
         post(messageReferencedBy: pointer, toSlotAtIndex: CInt(slot.rawValue))
     }
 

@@ -1,5 +1,5 @@
-import XCTest
 @testable import Whiteboard
+import XCTest
 
 private let testWBName = "test-swift-whiteboard"
 
@@ -47,24 +47,23 @@ final class WhiteboardTests: XCTestCase {
             XCTAssertNotNil(wbd.pointee.wb)
             return
         }
-        let postValue: UInt64 = UInt64.random(in: UInt64.min...UInt64.max)
+        let postValue = UInt64.random(in: UInt64.min...UInt64.max)
         let i = wb.pointee.indexes.1
         let e = wb.pointee.event_counters.1
         guard let next: UnsafeMutablePointer<UInt64> = whiteboard.nextMessagePointer(forSlotAtIndex: 1) else {
-            XCTFail() ; return
+            XCTFail("`nextMessagePoint(forSlotAtIndex:) returned nil`") ; return
         }
         next.pointee = postValue
         whiteboard.incrementGeneration(forSlotAtIndex: 1)
         whiteboard.incrementEventCounter(forSlotAtIndex: 1)
         guard let current: UnsafeMutablePointer<UInt64> = whiteboard.currentMessagePointer(forSlotAtIndex: 1) else {
-            XCTFail() ; return
+            XCTFail("`currentMessagePoint(forSlotAtIndex:)` returned nil") ; return
         }
         XCTAssertEqual(current, next)
         XCTAssertEqual(current.pointee, postValue)
         XCTAssertTrue(wb.pointee.indexes.1 == i + 1 || wb.pointee.indexes.1 == 0 && wb.pointee.indexes.1 != i)
         XCTAssertEqual(wb.pointee.event_counters.1, e &+ 1)
     }
-
 
     /// Test posting and fetching message at ExampleWhiteboardSlot.two
     func testSlotPostGet() {
@@ -74,18 +73,18 @@ final class WhiteboardTests: XCTestCase {
             XCTAssertNotNil(wbd.pointee.wb)
             return
         }
-        let postValue: UInt64 = UInt64.random(in: UInt64.min...UInt64.max)
+        let postValue = UInt64.random(in: UInt64.min...UInt64.max)
         let mySlot = ExampleWhiteboardSlot.two
         let i = wb.pointee.indexes.2
         let e = wb.pointee.event_counters.2
         guard let next: UnsafeMutablePointer<UInt64> = whiteboard.nextMessagePointer(for: mySlot) else {
-            XCTFail() ; return
+            XCTFail("`nextMessagePointer(for:)` returned nil") ; return
         }
         next.pointee = postValue
         whiteboard.incrementGeneration(for: mySlot)
         whiteboard.incrementEventCounter(for: mySlot)
         guard let current: UnsafeMutablePointer<UInt64> = whiteboard.currentMessagePointer(for: mySlot) else {
-            XCTFail() ; return
+            XCTFail("`currentMessagePointer(for:)` returned nil") ; return
         }
         XCTAssertEqual(current, next)
         XCTAssertEqual(current.pointee, postValue)
@@ -105,17 +104,17 @@ final class WhiteboardTests: XCTestCase {
         let i = wb.pointee.indexes.3
         let e = wb.pointee.event_counters.3
         guard let nextWithSlot: UnsafeMutablePointer<ExampleMessage> = whiteboard.nextMessagePointer(for: mySlot) else {
-            XCTFail() ; return
+            XCTFail("`nextMessagePointer(for:)` returned nil") ; return
         }
         guard let next: UnsafeMutablePointer<ExampleMessage> = whiteboard.nextMessagePointer() else {
-            XCTFail() ; return
+            XCTFail("`nextMessagePointer()` returned nil") ; return
         }
         XCTAssertEqual(nextWithSlot, next)
         let postedValue = ExampleMessage(value: Int32.random(in: Int32.min...Int32.max))
         whiteboard.post(message: postedValue)
         let receivedValue: ExampleMessage = whiteboard.getMessage()
         guard let current: UnsafeMutablePointer<ExampleMessage> = whiteboard.currentMessagePointer() else {
-            XCTFail() ; return
+            XCTFail("`currentMessagePointer()` returned nil") ; return
         }
         XCTAssertEqual(current, next)
         XCTAssertEqual(current.pointee, receivedValue)
@@ -126,6 +125,7 @@ final class WhiteboardTests: XCTestCase {
 
     func testPostPerformance() {
         let message = PerformanceMessage(value: UInt32.random(in: UInt32.min...UInt32.max))
+        //swiftlint:disable:next no_space_in_method_call
         measure {
             for _ in 0..<100_000 {
                 whiteboard.post(message: message)
@@ -134,6 +134,7 @@ final class WhiteboardTests: XCTestCase {
     }
 
     func testGetPerformance() {
+        //swiftlint:disable:next no_space_in_method_call
         measure {
             for _ in 0..<100_000 {
                 let _: PerformanceMessage = whiteboard.getMessage()
