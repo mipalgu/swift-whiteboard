@@ -242,8 +242,10 @@ public final class Whiteboard: Sendable {
     @inlinable
     public func post<MessageType>(array: [MessageType], toSlotAtIndex slotIndex: CInt) {
         let arrayCount = array.count
-        assert(MemoryLayout<MessageType>.stride * arrayCount <=
-               Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride)
+        assert(
+            MemoryLayout<MessageType>.stride * arrayCount <=
+            Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride
+        )
         // swiftlint:disable:next force_unwrapping
         let ptr = UnsafeMutableRawPointer(gsw_next_message(wbd.pointee.wb, slotIndex))!
         ptr.assumingMemoryBound(to: UInt16.self).pointee = UInt16(arrayCount)
