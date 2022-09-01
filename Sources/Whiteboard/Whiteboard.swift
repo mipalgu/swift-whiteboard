@@ -232,6 +232,70 @@ public final class Whiteboard: Sendable {
         post(messageReferencedBy: pointer, to: MessageType.whiteboardSlot)
     }
 
+    /// Post a contiguous array of elements to the whiteboard slot with the given numerical index
+    /// - Parameters:
+    ///   - array: The array of elements to post together with its count of elements
+    ///   - slotIndex: Slot number for the message to post
+    /// - Note: This function records the number of elements on the whiteboard,
+    ///         but uses a numerical index and thus is not recommended, except for low-level usage.
+    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `post(elements:to:)` instead.
+    @inlinable
+    public func post<MessageType>(array: [MessageType], toSlotAtIndex slotIndex: CInt) {
+        let arrayCount = array.count
+        assert(MemoryLayout<MessageType>.stride * arrayCount <= Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride)
+        let ptr = UnsafeMutableRawPointer(gsw_next_message(wbd.pointee.wb, slotIndex))!
+        ptr.assumingMemoryBound(to: UInt16.self).pointee = UInt16(arrayCount)
+        let base: UnsafeMutablePointer<MessageType> = (ptr + MemoryLayout<UInt16>.stride).assumingMemoryBound(to: MessageType.self)
+        if array.withContiguousStorageIfAvailable({
+            base.initialize(from: $0.baseAddress!, count: arrayCount)
+        }) == nil {
+            for i in 0..<arrayCount {
+                base[i] = array[i]
+            }
+        }
+        incrementGeneration(forSlotAtIndex: slotIndex)
+        incrementEventCounter(forSlotAtIndex: slotIndex)
+    }
+
+    /// Post a contiguous array of elements to the whiteboard slot with the given numerical index
+    /// - Parameters:
+    ///   - array: The array of elements to post together with its count of elements
+    ///   - slotIndex: Slot number for the message to post
+    /// - Note: This function records the number of elements on the whiteboard,
+    ///         but uses a numerical index and thus is not recommended, except for low-level usage.
+    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `post(elements:to:)` instead.
+    @inlinable
+    public func post<MessageType, Slot: WhiteboardSlot>(array a: [MessageType], to slot: Slot) {
+        post(array: a, toSlotAtIndex: CInt(slot.rawValue))
+    }
+
+    /// Post elements to the whiteboard to the whiteboard slot with the given numerical index
+    /// - Parameters:
+    ///   - elements: The buffer of elements to post
+    ///   - slotIndex: Slot number for the message to post
+    /// - Note: This function uses a numerical index and does not record the number of elements on the whiteboard
+    ///         and thus is not recommended, except for low-level usage.
+    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `post(elements:to:)` instead.
+    @inlinable
+    public func post<MessageType>(elements: UnsafeBufferPointer<MessageType>, toSlotAtIndex slotIndex: CInt) {
+        assert(MemoryLayout<MessageType>.stride * elements.count <= GU_SIMPLE_WHITEBOARD_BUFSIZE)
+        let base: UnsafeMutablePointer<MessageType> = nextMessagePointer(forSlotAtIndex: slotIndex)
+        base.initialize(from: elements.baseAddress!, count: elements.count)
+        incrementGeneration(forSlotAtIndex: slotIndex)
+        incrementEventCounter(forSlotAtIndex: slotIndex)
+    }
+
+    /// Post elements to the whiteboard to the given whiteboard slot
+    /// - Parameters:
+    ///   - elements: The buffer of elements to post
+    ///   - slotIndex: Slot number for the message to post
+    /// - Note: This function does not record the number of elements on the whiteboard.
+    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `post(elements:to:)` instead.
+    @inlinable
+    public func post<MessageType, Slot: WhiteboardSlot>(elements es: UnsafeBufferPointer<MessageType>, to slot: Slot) {
+        post(elements: es, toSlotAtIndex: CInt(slot.rawValue))
+    }
+
     /// Get a message from the whiteboard
     /// - Parameter slotIndex: Slot number for the message to get
     /// - Returns: A copy of the current whiteboard message in the given slot
@@ -259,6 +323,72 @@ public final class Whiteboard: Sendable {
     @inlinable
     public func getMessage<MessageType: WhiteboardSlotted>() -> MessageType {
         currentMessagePointer().pointee
+    }
+
+    /// Retrieve a buffer pointer to the current whiteboard message.
+    ///
+    /// The caller needs to ensure that the data within the whiteboard are copied
+    /// prior to being updated by the writer.
+    ///
+    /// - Parameter slotIndex: Slot number for the message to get
+    /// - Returns: A buffer pointer to the current whiteboard message in the given slot
+    /// - Note: This function uses a numerical index and returns a static element count derived from the size of
+    ///         a whiteboard message and each element and thus is not recommended, except for low-level usage.
+    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `getMessage(from:)` instead.
+    @inlinable
+    public func getElements<MessageType>(fromSlotAtIndex slotIndex: CInt) -> UnsafeBufferPointer<MessageType> {
+        UnsafeBufferPointer(
+            start: currentMessagePointer(forSlotAtIndex: slotIndex),
+            count: Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) / MemoryLayout<MessageType>.stride
+        )
+    }
+
+    /// Retrieve a buffer pointer to the current whiteboard message.
+    ///
+    /// The caller needs to ensure that the data within the whiteboard are copied
+    /// prior to being updated by the writer.
+    ///
+    /// - Parameter slotIndex: Slot number for the message to get
+    /// - Returns: A buffer pointer to the current whiteboard message in the given slot
+    /// - Note: This function uses a numerical index and returns a static element count derived from the size of
+    ///         a whiteboard message and each element and thus is not recommended, except for low-level usage.
+    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `getMessage(from:)` instead.
+    @inlinable
+    public func getElements<MessageType, Slot: WhiteboardSlot>(from slot: Slot) -> UnsafeBufferPointer<MessageType> {
+        getElements(fromSlotAtIndex: CInt(slot.rawValue))
+    }
+
+    /// Get an array of elements from the whiteboard slot with the given numerical index
+    ///
+    /// - Parameters:
+    ///   - slotIndex: Slot number for the message to post
+    /// - Returns: Array of elements containing the whiteboard message
+    /// - Note: This function retrieves the recorded number of elements from the whiteboard,
+    ///         but uses a numerical index and thus is not recommended, except for low-level usage.
+    /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `post(elements:to:)` instead.
+    @inlinable
+    public func getArray<MessageType>(fromSlotAtIndex slotIndex: CInt) -> [MessageType] {
+        let ptr = UnsafeMutableRawPointer(gsw_current_message(wbd.pointee.wb, slotIndex))!
+        let arrayCount = min(Int(ptr.assumingMemoryBound(to: UInt16.self).pointee), (Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride) / MemoryLayout<MessageType>.stride)
+        let base: UnsafeMutablePointer<MessageType> = (ptr + MemoryLayout<UInt16>.stride).assumingMemoryBound(to: MessageType.self)
+        let array = Array<MessageType>(unsafeUninitializedCapacity: arrayCount) { buffer, initializedCount in
+            buffer.baseAddress?.initialize(from: base, count: arrayCount)
+            initializedCount = arrayCount
+        }
+        return array
+    }
+
+    /// Get an array of elements from the whiteboard slot with the given numerical index.
+    ///
+    /// For higher performance, to read an array of raw bytes, use `getBytes(from:)` instead.
+    ///
+    /// - Parameters:
+    ///   - slotIndex: Slot number for the message to post
+    /// - Returns: Array of elements containing the whiteboard message
+    /// - Note: This function retrieves the recorded number of elements from the whiteboard.
+    @inlinable
+    public func getArray<MessageType, Slot: WhiteboardSlot>(from slot: Slot) -> [MessageType] {
+        getArray(fromSlotAtIndex: CInt(slot.rawValue))
     }
 
     deinit {

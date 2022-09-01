@@ -10,6 +10,11 @@ private enum ExampleWhiteboardSlot: Int, WhiteboardSlot {
     case two
     case three
     case four
+    case five
+    case six
+    case seven
+    case eight
+    case nine
 }
 
 private struct ExampleMessage: WhiteboardSlotted, Equatable {
@@ -240,6 +245,14 @@ final class WhiteboardTests: XCTestCase {
         XCTAssertEqual(wb.pointee.event_counters.3, e &+ 1)
     }
 
+    func testArray() {
+        let a = [1, 2, 3, 4]
+        whiteboard.post(array: a, to: ExampleWhiteboardSlot.five)
+        let b: [Int] = whiteboard.getArray(from: ExampleWhiteboardSlot.five)
+        XCTAssertEqual(a, b)
+    }
+
+    /// Test posting performance
     func testPostPerformance() {
         let message = PerformanceMessage(value: UInt32.random(in: UInt32.min...UInt32.max))
         // swiftlint:disable:next no_space_in_method_call
@@ -250,11 +263,35 @@ final class WhiteboardTests: XCTestCase {
         }
     }
 
+    /// Test array posting performance
+    func testArrayPostPerformance() {
+        let a = Array<Int>(repeating: Int.random(in: Int.min...Int.max), count: (Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride) / MemoryLayout<Int>.stride)
+        // swiftlint:disable:next no_space_in_method_call
+        measure {
+            for _ in 0..<100_000 {
+                whiteboard.post(array: a, to: ExampleWhiteboardSlot.seven)
+            }
+        }
+    }
+
+    /// Test receiving performance
     func testGetPerformance() {
         // swiftlint:disable:next no_space_in_method_call
         measure {
             for _ in 0..<100_000 {
                 let _: PerformanceMessage = whiteboard.getMessage()
+            }
+        }
+    }
+
+    /// Test array posting performance
+    func testArrayPostGetPerformance() {
+        let a = Array<Int>(repeating: Int.random(in: Int.min...Int.max), count: (Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride) / MemoryLayout<Int>.stride)
+        // swiftlint:disable:next no_space_in_method_call
+        measure {
+            for _ in 0..<100_000 {
+                whiteboard.post(array: a, to: ExampleWhiteboardSlot.eight)
+                let _: [Int] = whiteboard.getArray(from: ExampleWhiteboardSlot.eight)
             }
         }
     }
