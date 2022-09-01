@@ -242,7 +242,8 @@ public final class Whiteboard: Sendable {
     @inlinable
     public func post<MessageType>(array: [MessageType], toSlotAtIndex slotIndex: CInt) {
         let arrayCount = array.count
-        assert(MemoryLayout<MessageType>.stride * arrayCount <= Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride)
+        assert(MemoryLayout<MessageType>.stride * arrayCount <=
+               Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride)
         // swiftlint:disable:next force_unwrapping
         let ptr = UnsafeMutableRawPointer(gsw_next_message(wbd.pointee.wb, slotIndex))!
         ptr.assumingMemoryBound(to: UInt16.self).pointee = UInt16(arrayCount)
@@ -375,10 +376,12 @@ public final class Whiteboard: Sendable {
     public func getArray<MessageType>(fromSlotAtIndex slotIndex: CInt) -> [MessageType] {
         // swiftlint:disable:next force_unwrapping
         let ptr = UnsafeMutableRawPointer(gsw_current_message(wbd.pointee.wb, slotIndex))!
-        let arrayCount =
-            min(Int(ptr.assumingMemoryBound(to: UInt16.self).pointee),
-                (Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride) / MemoryLayout<MessageType>.stride)
-        let base: UnsafeMutablePointer<MessageType> = (ptr + MemoryLayout<UInt16>.stride).assumingMemoryBound(to: MessageType.self)
+        let arrayCount = min(
+            Int(ptr.assumingMemoryBound(to: UInt16.self).pointee),
+            (Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride) / MemoryLayout<MessageType>.stride
+        )
+        let base: UnsafeMutablePointer<MessageType> = (ptr + MemoryLayout<UInt16>.stride)
+            .assumingMemoryBound(to: MessageType.self)
         let array = [MessageType](unsafeUninitializedCapacity: arrayCount) { buffer, initializedCount in
             buffer.baseAddress?.initialize(from: base, count: arrayCount)
             initializedCount = arrayCount
