@@ -243,10 +243,13 @@ public final class Whiteboard: Sendable {
     public func post<MessageType>(array: [MessageType], toSlotAtIndex slotIndex: CInt) {
         let arrayCount = array.count
         assert(MemoryLayout<MessageType>.stride * arrayCount <= Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride)
+        // swiftlint:disable:next force_unwrapping
         let ptr = UnsafeMutableRawPointer(gsw_next_message(wbd.pointee.wb, slotIndex))!
         ptr.assumingMemoryBound(to: UInt16.self).pointee = UInt16(arrayCount)
-        let base: UnsafeMutablePointer<MessageType> = (ptr + MemoryLayout<UInt16>.stride).assumingMemoryBound(to: MessageType.self)
+        let base: UnsafeMutablePointer<MessageType> = (ptr + MemoryLayout<UInt16>.stride)
+            .assumingMemoryBound(to: MessageType.self)
         if array.withContiguousStorageIfAvailable({
+            // swiftlint:disable:next force_unwrapping
             base.initialize(from: $0.baseAddress!, count: arrayCount)
         }) == nil {
             for i in 0..<arrayCount {
@@ -279,8 +282,10 @@ public final class Whiteboard: Sendable {
     @inlinable
     public func post<MessageType>(elements: UnsafeBufferPointer<MessageType>, toSlotAtIndex slotIndex: CInt) {
         assert(MemoryLayout<MessageType>.stride * elements.count <= GU_SIMPLE_WHITEBOARD_BUFSIZE)
-        let base: UnsafeMutablePointer<MessageType> = nextMessagePointer(forSlotAtIndex: slotIndex)
-        base.initialize(from: elements.baseAddress!, count: elements.count)
+        if let elementsBase = elements.baseAddress {
+            let base: UnsafeMutablePointer<MessageType> = nextMessagePointer(forSlotAtIndex: slotIndex)
+            base.initialize(from: elementsBase, count: elements.count)
+        }
         incrementGeneration(forSlotAtIndex: slotIndex)
         incrementEventCounter(forSlotAtIndex: slotIndex)
     }
@@ -368,10 +373,13 @@ public final class Whiteboard: Sendable {
     /// For high-level usage, use messages conforming to `WhiteboardSlotted` or  `post(elements:to:)` instead.
     @inlinable
     public func getArray<MessageType>(fromSlotAtIndex slotIndex: CInt) -> [MessageType] {
+        // swiftlint:disable:next force_unwrapping
         let ptr = UnsafeMutableRawPointer(gsw_current_message(wbd.pointee.wb, slotIndex))!
-        let arrayCount = min(Int(ptr.assumingMemoryBound(to: UInt16.self).pointee), (Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride) / MemoryLayout<MessageType>.stride)
+        let arrayCount =
+            min(Int(ptr.assumingMemoryBound(to: UInt16.self).pointee),
+                (Int(GU_SIMPLE_WHITEBOARD_BUFSIZE) - MemoryLayout<UInt16>.stride) / MemoryLayout<MessageType>.stride)
         let base: UnsafeMutablePointer<MessageType> = (ptr + MemoryLayout<UInt16>.stride).assumingMemoryBound(to: MessageType.self)
-        let array = Array<MessageType>(unsafeUninitializedCapacity: arrayCount) { buffer, initializedCount in
+        let array = [MessageType](unsafeUninitializedCapacity: arrayCount) { buffer, initializedCount in
             buffer.baseAddress?.initialize(from: base, count: arrayCount)
             initializedCount = arrayCount
         }
