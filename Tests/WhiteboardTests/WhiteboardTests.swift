@@ -250,10 +250,14 @@ final class WhiteboardTests: XCTestCase {
         whiteboard.post(array: a, to: ExampleWhiteboardSlot.five)
         let b: [Int] = whiteboard.getArray(from: ExampleWhiteboardSlot.five)
         XCTAssertEqual(a, b)
-        let result: CInt = a.withUnsafeBufferPointer {
+        let result: Int = a.withUnsafeBufferPointer {
             whiteboard.post(elements: $0, to: ExampleWhiteboardSlot.five)
             let b: UnsafeBufferPointer<Int> = whiteboard.getElements(from: ExampleWhiteboardSlot.five)
-            return memcmp(UnsafeRawPointer($0.baseAddress), UnsafeRawPointer(b.baseAddress), a.count * MemoryLayout<Int>.stride)
+            return $0.baseAddress.map { abase in
+                b.baseAddress.map { bbase in
+                    Int(memcmp(UnsafeRawPointer(abase), UnsafeRawPointer(bbase), a.count * MemoryLayout<Int>.stride))
+                } ?? -1
+            } ?? -2
         }
         XCTAssertEqual(result, 0)
     }
