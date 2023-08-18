@@ -240,6 +240,35 @@ final class WhiteboardTests: XCTestCase {
         XCTAssertEqual(wb.pointee.event_counters.3, e &+ 1)
     }
 
+    func testLowLevelGetEventCounter() {
+        let wbd = whiteboard.wbd
+        XCTAssertNotNil(wbd)
+        guard let wb = wbd.pointee.wb else {
+            XCTAssertNotNil(wbd.pointee.wb)
+            return
+        }
+        let currentEventCounter = wb.pointee.event_counters.3
+        XCTAssertEqual(whiteboard.getEventCounter(forSlotAtIndex: 3), currentEventCounter)
+        let newEventCounter = currentEventCounter &+ 1
+        wb.pointee.event_counters.3 = newEventCounter
+        XCTAssertEqual(whiteboard.getEventCounter(forSlotAtIndex: 3), newEventCounter)
+    }
+
+    func testTypedGetEventCounter() {
+        let wbd = whiteboard.wbd
+        XCTAssertNotNil(wbd)
+        guard let wb = wbd.pointee.wb else {
+            XCTAssertNotNil(wbd.pointee.wb)
+            return
+        }
+        let mySlot = ExampleWhiteboardSlot.three
+        let currentEventCounter = wb.pointee.event_counters.3
+        XCTAssertEqual(whiteboard.getEventCounter(for: mySlot), currentEventCounter)
+        let newEventCounter = currentEventCounter &+ 1
+        wb.pointee.event_counters.3 = newEventCounter
+        XCTAssertEqual(whiteboard.getEventCounter(for: mySlot), newEventCounter)
+    }
+
     func testPostPerformance() {
         let message = PerformanceMessage(value: UInt32.random(in: UInt32.min...UInt32.max))
         // swiftlint:disable:next no_space_in_method_call
