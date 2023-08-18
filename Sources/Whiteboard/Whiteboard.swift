@@ -232,19 +232,17 @@ public final class Whiteboard: Sendable {
         post(messageReferencedBy: pointer, to: MessageType.whiteboardSlot)
     }
 
-    /// Increment the event counter for the given message slot
-    /// - Parameter slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to post
-    /// - Note: the event counter will wrap around to zero on overflow
+    /// Fetch the event counter for the given message slot
+    /// - Parameter slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to post.
     @inlinable
     public func getEventCounter<Slot: WhiteboardSlot>(for slot: Slot) -> UInt16 {
         getEventCounter(forSlotAtIndex: CInt(slot.rawValue))
     }
 
-    /// Increment the event counter for the given message slot
-    /// - Parameter slot: Slot number for the given message whose generation should be incremented
-    /// - Note: the event counter will wrap around to zero on overflow
+    /// Fetch the event counter for the given message slot
+    /// - Parameter slot: Slot number for the given message.
     /// - Note: This function uses a numerical index and is not recommended, except for low-level usage.
-    /// For high-level usage, use `incrementEventCounter(for slot:)` instead.
+    /// For high-level usage, use `getEventCounter(for slot:)` instead.
     @inlinable
     public func getEventCounter(forSlotAtIndex slot: CInt) -> UInt16 {
         withUnsafePointer(to: &wbd.pointee.wb.pointee.event_counters.0) {
