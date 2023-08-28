@@ -63,6 +63,8 @@ public final class Whiteboard: Sendable {
         wbd = gsw_new_simple_whiteboard(name)
     }
 
+    // swiftlint:disable implicitly_unwrapped_optional
+
     /// Return a pointer to  the current whiteboard message for the returned message type
     /// - Returns: A pointer to the next message in the given slot
     /// - Note: This function uses messages conforming to `WhiteboardSlotted` and is therefore type safe.
@@ -122,6 +124,8 @@ public final class Whiteboard: Sendable {
     public func nextMessagePointer<MessageType>(forSlotAtIndex slot: CInt) -> UnsafeMutablePointer<MessageType>! {
         UnsafeMutableRawPointer(gsw_next_message(wbd.pointee.wb, slot))?.assumingMemoryBound(to: MessageType.self)
     }
+
+    // swiftlint:enable implicitly_unwrapped_optional
 
     /// Increment the ring buffer generation number for the given message slot
     /// - Parameter slot: A `WhiteboardSlot` whose `rawValue` is the slot number for the message to post

@@ -1,13 +1,15 @@
-name: Generate Documentation
+name: Ubuntu 22.04 Swift Release CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
 
 jobs:
 
-  exec-jazzy:
-    runs-on: ubuntu-20.04
+  exec-ci-release-22_04:
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: swift-actions/setup-swift@v1
@@ -24,17 +26,14 @@ jobs:
             eval "$(ssh-agent -s)"
             ssh-add ~/.ssh/id_ed25519
 
-      - name: Clone Repo 
+      - name: Checkout repo
         uses: actions/checkout@v2
+      
+      #- name: Reconfigure Private Repo URLs
+      #  run: sed -i 's/git@github.com:/https:\/\/${{ secrets.ACCESS_TOKEN }}@github.com\//g' Package.swift
 
-      - name: Generate Documentation
-        uses: mipalgu/swiftpm-generate-documentation@main
-        with:
-            swift-version: "5.7"
+      - name: Release build
+        run: swift build -c release
 
-      - name: Pages Deployment
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          force_orphan: true
+      - name: Release Test
+        run: swift test -c release
