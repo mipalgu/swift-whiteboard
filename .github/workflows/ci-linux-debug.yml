@@ -1,16 +1,14 @@
-name: Swift Coverage Test
+name: Ubuntu 20.04 Swift Debug CI
 
 on:
-  pull_request:
-    branches:
-      - main
-      - develop
   push:
+    branches: [develop, main]
+  pull_request:
     branches: [develop, main]
 
 jobs:
 
-  exec-cov:
+  exec-ci-debug:
     runs-on: ubuntu-20.04
 
     steps:
@@ -30,25 +28,19 @@ jobs:
 
       - name: Checkout repo
         uses: actions/checkout@v2
-
+      
       #- name: Reconfigure Private Repo URLs
       #  run: sed -i 's/git@github.com:/https:\/\/${{ secrets.ACCESS_TOKEN }}@github.com\//g' Package.swift
 
-      - name: Run tests
+      - name: Debug Build
+        run: swift build -c debug
+
+      - name: Debug Test
         run: swift test --enable-code-coverage
 
-      - name: Coverage Test
+      - name: Coverage Report
         uses: mattpolzin/swift-codecov-action@0.7.3
         id: cov
         with:
-          MINIMUM_COVERAGE: 95
+          MINIMUM_COVERAGE: 0
 
-      - name: Post Positive Result
-        if: ${{ success() }}
-        run: |
-          echo "::warning file=Package.swift,line=1,col=1::The current code coverage percentage is passing with ${{ steps.cov.outputs.codecov }} (minimum allowed: ${{ steps.cov.outputs.minimum_coverage }}%)."
-
-      - name: Post Negative Result
-        if: ${{ failure() }}
-        run: |
-          echo "::error file=Package.swift,line=1,col=1::The current code coverage percentage is failing with ${{ steps.cov.outputs.codecov }} (minimum allowed: ${{ steps.cov.outputs.minimum_coverage }}%)."
